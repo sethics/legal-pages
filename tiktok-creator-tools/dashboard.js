@@ -2,8 +2,22 @@ const API_BASE = 'https://www.mtishows.com/tiktok-api.php';
 
 // Get URL parameters
 const urlParams = new URLSearchParams(window.location.search);
-const openId = urlParams.get('openid');
+//const openId = urlParams.get('openid');
+const openId = urlParams.get('openid') || 'demo_user_12345';
+const connected = urlParams.get('connected');
 const justConnected = urlParams.get('connected') === '1';
+const demoMode = urlParams.get('demo') === 'true';
+
+// Allow demo mode for video recording
+if (!connected && !demoMode) {
+    window.location.href = 'index.html';
+    return;
+}
+
+
+
+
+
 
 // Show success message if just connected
 if (justConnected) {
@@ -14,9 +28,9 @@ if (justConnected) {
 }
 
 // Redirect if no openId
-if (!openId) {
-    window.location.href = 'index.html';
-}
+//if (!openId) {
+  //  window.location.href = 'index.html';
+//}
 
 // Fetch account info
 async function loadAccountInfo() {
