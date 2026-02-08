@@ -10,7 +10,6 @@ const demoMode = urlParams.get('demo') === 'true';
 // Allow demo mode for video recording
 if (!connected && !demoMode) {
     window.location.href = 'index.html';
-    // Note: code after redirect won't execute, but keeping 'return' is good practice
 }
 
 // Show success message if just connected
@@ -28,25 +27,30 @@ if (justConnected) {
 async function loadAccountInfo() {
     // If demo mode, show mock data
     if (demoMode) {
-        document.getElementById('accountLabel').textContent = 'Demo Creator';
-        document.getElementById('accountStatus').textContent = 'Active';
+        const accountLabel = document.getElementById('accountLabel');
+        const accountStatus = document.getElementById('accountStatus');
+        if (accountLabel) accountLabel.textContent = 'Demo Creator';
+        if (accountStatus) accountStatus.textContent = 'Active';
         return;
     }
     
     try {
-        // FIXED: Removed template literal backticks, use parentheses for fetch
         const response = await fetch(`${API_BASE}?action=account&openid=${encodeURIComponent(openId)}`);
         const data = await response.json();
         
         if (data.success) {
-            document.getElementById('accountLabel').textContent = data.account.accountLabel;
-            document.getElementById('accountStatus').textContent = data.account.status;
+            const accountLabel = document.getElementById('accountLabel');
+            const accountStatus = document.getElementById('accountStatus');
+            if (accountLabel) accountLabel.textContent = data.account.accountLabel;
+            if (accountStatus) accountStatus.textContent = data.account.status;
         }
     } catch (error) {
         console.error('Failed to load account:', error);
         // Fallback to demo data on error
-        document.getElementById('accountLabel').textContent = 'Demo Creator';
-        document.getElementById('accountStatus').textContent = 'Active';
+        const accountLabel = document.getElementById('accountLabel');
+        const accountStatus = document.getElementById('accountStatus');
+        if (accountLabel) accountLabel.textContent = 'Demo Creator';
+        if (accountStatus) accountStatus.textContent = 'Active';
     }
 }
 
@@ -59,7 +63,6 @@ async function loadQueue() {
     }
     
     try {
-        // FIXED: Removed template literal backticks, use parentheses for fetch
         const response = await fetch(`${API_BASE}?action=queue&openid=${encodeURIComponent(openId)}`);
         const data = await response.json();
         
@@ -93,3 +96,95 @@ function displayMockQueue() {
         {
             title: 'Editing Apps Review',
             caption: 'My favorite editing apps for TikTok videos 📱 #EditingTips',
+            status: 'Posted',
+            created: '2026-02-07'
+        },
+        {
+            title: 'Q&A Session',
+            caption: 'Responding to your questions about consistency 💪 #QandA',
+            status: 'Queued',
+            created: '2026-02-08'
+        },
+        {
+            title: 'Content Planning',
+            caption: 'Weekly content planning strategy for creators 📅 #ContentStrategy',
+            status: 'Queued',
+            created: '2026-02-08'
+        }
+    ];
+    
+    displayQueue(mockPosts);
+    updateStats(mockPosts);
+}
+
+function displayQueue(posts) {
+    const container = document.getElementById('queueContent');
+    
+    if (!container) {
+        console.error('queueContent element not found');
+        return;
+    }
+    
+    if (posts.length === 0) {
+        showEmptyQueue();
+        return;
+    }
+    
+    container.innerHTML = posts.map(post => `
+        <div class="post-item">
+            <div class="post-info">
+                <h4>${escapeHtml(post.title || 'Untitled Post')}</h4>
+                <p>${escapeHtml(post.caption || 'No caption').substring(0, 100)}${(post.caption || '').length > 100 ? '...' : ''}</p>
+            </div>
+            <span class="post-status status-${post.status.toLowerCase()}">${post.status}</span>
+        </div>
+    `).join('');
+}
+
+function showEmptyQueue() {
+    const container = document.getElementById('queueContent');
+    if (!container) return;
+    
+    container.innerHTML = `
+        <div class="queue-empty">
+            <div class="queue-empty-icon">📭</div>
+            <h3>No posts in queue</h3>
+            <p>Your automated posts will appear here once they're added to your workflow</p>
+        </div>
+    `;
+}
+
+function updateStats(posts) {
+    // Map different status names (your backend might use different values)
+    const queued = posts.filter(p => 
+        p.status === 'Queued' || p.status === 'Pending'
+    ).length;
+    
+    const published = posts.filter(p => 
+        p.status === 'Published' || p.status === 'Posted'
+    ).length;
+    
+    const draft = posts.filter(p => 
+        p.status === 'Draft' || p.status === 'Inbox Draft'
+    ).length;
+    
+    const queuedEl = document.getElementById('queuedCount');
+    const publishedEl = document.getElementById('publishedCount');
+    const draftEl = document.getElementById('draftCount');
+    
+    if (queuedEl) queuedEl.textContent = queued;
+    if (publishedEl) publishedEl.textContent = published;
+    if (draftEl) draftEl.textContent = draft;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Load data on page load
+document.addEventListener('DOMContentLoaded', () => {
+    loadAccountInfo();
+    loadQueue();
+});
